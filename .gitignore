@@ -1,0 +1,14 @@
+# Student runtime data — never publish
+CLAUDE-OUTPUTS/
+ABOUT-ME/
+progress.json
+
+# Test/creator data — never publish
+CLAUDE-OUTPUTS-*/
+progress.*.json
+.course-mode
+
+# System
+.DS_Store
+__pycache__/
+*.pyc

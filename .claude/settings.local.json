@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod +x \"/Users/vishal/Documents/Linkedin/Product Managers/AI-Native-PM-OS/setup.sh\")",
+      "Bash(python3 -c ' *)"
+    ]
+  }
+}

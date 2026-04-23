@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-Native PM OS</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.0/github-markdown-light.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --sidebar-width: 290px;
+      --accent: #5b4fcf;
+      --accent-light: #ece9ff;
+      --bg: #f8f8fb;
+      --surface: #ffffff;
+      --border: #e5e5ea;
+      --text: #1a1a2e;
+      --muted: #6b7280;
+      --green: #16a34a;
+      --green-bg: #f0fdf4;
+      --orange: #ea580c;
+    }
+
+    #test-banner {
+      display: none;
+      background: #fff7ed;
+      border-bottom: 2px solid var(--orange);
+      color: var(--orange);
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      padding: 6px 16px;
+      letter-spacing: 0.04em;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+
+    body.test-mode {
+      padding-top: 30px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: var(--sidebar-width);
+      min-width: var(--sidebar-width);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #sidebar-header {
+      padding: 20px 18px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #sidebar-header h1 {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 2px;
+    }
+
+    #sidebar-header p {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    #progress-bar-wrap {
+      background: var(--border);
+      border-radius: 99px;
+      height: 6px;
+      overflow: hidden;
+    }
+
+    #progress-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width 0.4s ease;
+    }
+
+    #progress-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 5px;
+    }
+
+    #lesson-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 8px 0 16px;
+    }
+
+    .module-group {}
+
+    .module-header {
+      padding: 10px 18px 6px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      color: var(--muted);
+      text-transform: uppercase;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .module-header:hover { color: var(--text); }
+
+    .module-chevron {
+      transition: transform 0.2s;
+      font-size: 10px;
+    }
+
+    .module-lessons { display: block; }
+    .module-lessons.collapsed { display: none; }
+
+    .lesson-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 18px 6px 20px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text);
+      border-left: 3px solid transparent;
+      transition: background 0.15s;
+    }
+
+    .lesson-item:hover { background: var(--bg); }
+
+    .lesson-item.active {
+      background: var(--accent-light);
+      border-left-color: var(--accent);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .lesson-icon {
+      font-size: 12px;
+      flex-shrink: 0;
+      width: 16px;
+      text-align: center;
+    }
+
+    .lesson-title { line-height: 1.3; }
+
+    /* ── Main content ── */
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    #lesson-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .nav-btn:hover { background: var(--bg); }
+    .nav-btn:disabled { opacity: 0.35; cursor: default; }
+
+    #complete-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 7px 18px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    #complete-btn:hover { opacity: 0.88; }
+    #complete-btn.done {
+      background: var(--green);
+    }
+
+    #content-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 40px 48px;
+    }
+
+    /* Claude Code tip banner */
+    #cc-tip {
+      background: #1e1e2e;
+      color: #cdd6f4;
+      border-radius: 10px;
+      padding: 14px 20px;
+      margin-bottom: 28px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    #cc-tip .tip-label {
+      background: var(--accent);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    #cc-tip .tip-cmd {
+      font-family: "SF Mono", "Fira Mono", monospace;
+      background: #313244;
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: #a6e3a1;
+      cursor: pointer;
+      user-select: all;
+    }
+
+    #cc-tip .tip-cmd:hover { background: #45475a; }
+
+    /* Welcome screen */
+    #welcome {
+      max-width: 620px;
+      margin: 60px auto;
+      text-align: center;
+    }
+
+    #welcome h2 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    #welcome p {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+
+    #welcome .start-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    #welcome .start-btn:hover { opacity: 0.88; }
+
+    /* Markdown rendering */
+    .markdown-body {
+      max-width: 760px;
+      font-size: 15px;
+      line-height: 1.75;
+    }
+
+    .markdown-body h1 { font-size: 24px; margin-bottom: 8px; }
+    .markdown-body h2 { margin-top: 32px; }
+    .markdown-body h3 { margin-top: 24px; }
+    .markdown-body pre { font-size: 13px; }
+    .markdown-body code { font-size: 13px; }
+    .markdown-body blockquote { border-left: 3px solid var(--accent); }
+
+    /* Loading */
+    #loading {
+      display: none;
+      padding: 80px 0;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<div id="test-banner">⚠ TEST MODE — progress saved to <span id="test-file"></span>, outputs to <span id="test-outputs"></span>/</div>
+
+<!-- Sidebar -->
+<aside id="sidebar">
+  <div id="sidebar-header">
+    <h1>AI-Native PM OS</h1>
+    <p>40–50 hours · 11 modules · 62 lessons</p>
+    <div id="progress-bar-wrap">
+      <div id="progress-bar" style="width:0%"></div>
+    </div>
+    <div id="progress-label">0 / 61 lessons complete</div>
+  </div>
+  <div id="lesson-list"></div>
+</aside>
+
+<!-- Main -->
+<main id="main">
+  <div id="topbar">
+    <div id="lesson-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigateLesson(-1)" disabled>← Prev</button>
+      <button class="nav-btn" id="next-btn" onclick="navigateLesson(1)" disabled>Next →</button>
+    </div>
+    <button id="complete-btn" onclick="toggleComplete()" style="display:none">Mark Complete</button>
+  </div>
+
+  <div id="content-wrap">
+    <div id="loading">
+      <div class="spinner"></div>
+      Loading lesson…
+    </div>
+
+    <div id="welcome">
+      <h2>Welcome to AI-Native PM OS</h2>
+      <p>
+        This course transforms Claude Code into your personal PM operating system.<br>
+        By Module 10, you'll have autonomous agents for research, analytics, PRDs, and more.
+      </p>
+      <p style="font-size:13px; color: #888; margin-bottom:8px;">
+        Use the sidebar to browse lessons. In your terminal, run:
+      </p>
+      <code style="background:#f3f4f6; padding:8px 16px; border-radius:6px; font-size:14px; display:block; margin-bottom:24px;">
+        claude
+      </code>
+      <p style="font-size:13px; color: #888; margin-bottom:24px;">
+        Then type <strong>/lesson 0-1</strong> to begin with Claude as your guide.
+      </p>
+      <button class="start-btn" onclick="loadLesson('module-0/0-1-install-and-setup.md')">
+        Start Module 0 →
+      </button>
+    </div>
+
+    <div id="cc-tip" style="display:none">
+      <span class="tip-label">Claude Code</span>
+      <span>Open your terminal in the course folder and type:</span>
+      <span class="tip-cmd" id="tip-cmd" title="Click to copy">/lesson 0-1</span>
+      <span style="color:#6c7086; font-size:12px">(click to copy)</span>
+    </div>
+
+    <article class="markdown-body" id="lesson-content" style="display:none"></article>
+  </div>
+</main>
+
+<script>
+const API = 'http://localhost:4242/api';
+let lessonOrder = [];
+let progressData = { lessons: {} };
+let currentPath = null;
+let moduleTree = [];
+
+async function init() {
+  const [tree, order, progress, profile] = await Promise.all([
+    fetch(`${API}/lessons`).then(r => r.json()),
+    fetch(`${API}/order`).then(r => r.json()),
+    fetch(`${API}/progress`).then(r => r.json()),
+    fetch(`${API}/profile`).then(r => r.json()),
+  ]);
+
+  if (profile.is_test) {
+    const banner = document.getElementById('test-banner');
+    banner.style.display = 'block';
+    document.getElementById('test-file').textContent = profile.progress_file;
+    document.getElementById('test-outputs').textContent = profile.outputs_dir;
+    document.body.classList.add('test-mode');
+  }
+  moduleTree = tree;
+  lessonOrder = order;
+  progressData = progress;
+  renderSidebar();
+  updateProgressBar();
+
+  // Resume where left off
+  if (progress.current_lesson && progress.lessons[progress.current_lesson] !== undefined) {
+    loadLesson(progress.current_lesson);
+  }
+}
+
+function renderSidebar() {
+  const list = document.getElementById('lesson-list');
+  list.innerHTML = '';
+  moduleTree.forEach((mod, mi) => {
+    const group = document.createElement('div');
+    group.className = 'module-group';
+
+    const header = document.createElement('div');
+    header.className = 'module-header';
+    header.innerHTML = `<span>${mod.title}</span><span class="module-chevron">▾</span>`;
+    header.onclick = () => {
+      const lessons = group.querySelector('.module-lessons');
+      const chevron = header.querySelector('.module-chevron');
+      const collapsed = lessons.classList.toggle('collapsed');
+      chevron.style.transform = collapsed ? 'rotate(-90deg)' : '';
+    };
+
+    const lessons = document.createElement('div');
+    lessons.className = 'module-lessons';
+
+    mod.lessons.forEach(l => {
+      const item = document.createElement('div');
+      item.className = 'lesson-item';
+      item.dataset.path = l.path;
+      const done = progressData.lessons[l.path] === true;
+      item.innerHTML = `
+        <span class="lesson-icon">${done ? '✅' : '○'}</span>
+        <span class="lesson-title">${l.title}</span>
+      `;
+      item.onclick = () => loadLesson(l.path);
+      lessons.appendChild(item);
+    });
+
+    group.appendChild(header);
+    group.appendChild(lessons);
+    list.appendChild(group);
+  });
+}
+
+function updateProgressBar() {
+  const lessons = progressData.lessons || {};
+  const total = Object.keys(lessons).length;
+  const done = Object.values(lessons).filter(Boolean).length;
+  const pct = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = `${done} / ${total} lessons complete`;
+}
+
+async function loadLesson(path) {
+  currentPath = path;
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('lesson-content').style.display = 'none';
+  document.getElementById('cc-tip').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+
+  // Active sidebar item
+  document.querySelectorAll('.lesson-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.path === path);
+  });
+
+  try {
+    const res = await fetch(`${API}/lesson?path=${encodeURIComponent(path)}`);
+    const data = await res.json();
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('lesson-content').style.display = 'block';
+    document.getElementById('lesson-content').innerHTML = marked.parse(data.content);
+    document.getElementById('cc-tip').style.display = 'flex';
+
+    // Update Claude Code tip command
+    const match = path.match(/(\d+[a-z]?-\d+)/);
+    const lessonId = match ? match[1] : path;
+    document.getElementById('tip-cmd').textContent = `/lesson ${lessonId}`;
+    document.getElementById('tip-cmd').onclick = () => {
+      navigator.clipboard.writeText(`/lesson ${lessonId}`).then(() => {
+        document.getElementById('tip-cmd').textContent = 'Copied!';
+        setTimeout(() => {
+          document.getElementById('tip-cmd').textContent = `/lesson ${lessonId}`;
+        }, 1500);
+      });
+    };
+
+    // Nav buttons
+    const idx = lessonOrder.indexOf(path);
+    document.getElementById('prev-btn').disabled = idx <= 0;
+    document.getElementById('next-btn').disabled = idx >= lessonOrder.length - 1;
+
+    // Complete button
+    const completeBtn = document.getElementById('complete-btn');
+    completeBtn.style.display = 'inline-block';
+    const done = progressData.lessons[path] === true;
+    completeBtn.textContent = done ? '✅ Completed' : 'Mark Complete';
+    completeBtn.className = done ? 'done' : '';
+
+    // Scroll to top
+    document.getElementById('content-wrap').scrollTop = 0;
+
+    // Update progress tracking (just visiting sets current_lesson)
+    await fetch(`${API}/progress`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, completed: progressData.lessons[path] || false }),
+    });
+    progressData.current_lesson = path;
+  } catch (e) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('lesson-content').style.display = 'block';
+    document.getElementById('lesson-content').innerHTML = '<p style="color:red">Failed to load lesson. Is the server running?</p>';
+  }
+}
+
+async function toggleComplete() {
+  if (!currentPath) return;
+  const wasComplete = progressData.lessons[currentPath] === true;
+  const nowComplete = !wasComplete;
+
+  const res = await fetch(`${API}/progress`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path: currentPath, completed: nowComplete }),
+  });
+  const data = await res.json();
+  progressData.lessons = data.lessons;
+
+  // Update button
+  const btn = document.getElementById('complete-btn');
+  btn.textContent = nowComplete ? '✅ Completed' : 'Mark Complete';
+  btn.className = nowComplete ? 'done' : '';
+
+  // Update sidebar icon
+  const item = document.querySelector(`.lesson-item[data-path="${currentPath}"] .lesson-icon`);
+  if (item) item.textContent = nowComplete ? '✅' : '○';
+
+  updateProgressBar();
+
+  // If completed, auto-advance after 1.2s
+  if (nowComplete) {
+    const idx = lessonOrder.indexOf(currentPath);
+    if (idx >= 0 && idx < lessonOrder.length - 1) {
+      setTimeout(() => loadLesson(lessonOrder[idx + 1]), 1200);
+    }
+  }
+}
+
+function navigateLesson(dir) {
+  const idx = lessonOrder.indexOf(currentPath);
+  const next = lessonOrder[idx + dir];
+  if (next) loadLesson(next);
+}
+
+init();
+</script>
+</body>
+</html>
