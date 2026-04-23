@@ -72,8 +72,8 @@ Everything you build in this course will be grounded in Meridian's context. By M
 |------|----------|---------|
 | Claude Code | ✅ Yes | https://claude.ai/code |
 | Claude Pro or Team plan | ✅ Yes | https://claude.ai |
-| Python 3.8+ | ✅ Yes | https://python.org/downloads |
-| Git | ✅ Yes | https://git-scm.com |
+| Python 3.8+ | Optional | https://python.org/downloads — only needed for the progress dashboard |
+| Git | Optional | https://git-scm.com — installer falls back to ZIP download if absent |
 
 ---
 

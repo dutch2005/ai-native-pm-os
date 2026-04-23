@@ -34,19 +34,19 @@ if ! command -v claude &>/dev/null; then
 fi
 echo -e "${GREEN}  ✓ Claude Code found${NC}"
 
-# ── 2. Check Python 3 ────────────────────────────────────
-echo "Checking Python..."
+# ── 2. Check Python 3 (optional — only needed for dashboard) ──
+PYTHON=""
 if command -v python3 &>/dev/null; then
   PYTHON=python3
 elif command -v python &>/dev/null && python --version 2>&1 | grep -q "Python 3"; then
   PYTHON=python
-else
-  echo -e "${YELLOW}  ⚠ Python 3 not found. The course UI requires Python 3.${NC}"
-  echo "  Install it from: https://python.org/downloads"
-  echo "  Then re-run this script."
-  exit 1
 fi
-echo -e "${GREEN}  ✓ Python 3 found ($($PYTHON --version))${NC}"
+if [ -n "$PYTHON" ]; then
+  echo -e "${GREEN}  ✓ Python 3 found — progress dashboard available${NC}"
+else
+  echo -e "${YELLOW}  ○ Python 3 not found — progress dashboard will be unavailable${NC}"
+  echo "    (Optional. Install from https://python.org/downloads if you want it)"
+fi
 
 # ── 3. Set course mode ───────────────────────────────────
 if [ ! -f .course-mode ]; then
@@ -90,73 +90,108 @@ else
   echo -e "${GREEN}  ✓ ABOUT-ME/CLAUDE.md already exists${NC}"
 fi
 
-# ── 6. Initialize progress.json ───────────────────────────
+# ── 6. Initialize progress.json (pure shell — no Python needed) ──
 if [ ! -f progress.json ]; then
   echo -e "${YELLOW}  ⚠ progress.json missing — regenerating...${NC}"
-  $PYTHON - << 'PYEOF'
-import json, pathlib
-lessons = [
-  "module-0/0-1-install-and-setup.md","module-0/0-2-claude-modes.md",
-  "module-0/0-3-build-four-folders.md","module-0/0-4-two-core-files.md",
-  "module-0/0-5-slash-commands-and-skills.md","module-0/0-6-connect-first-tool.md",
-  "module-0/0-7-pm-ai-mental-model.md","module-0/0-8-token-economics.md",
-  "module-1/1-1-claude-md-hierarchy.md","module-1/1-2-what-goes-in-each-layer.md",
-  "module-1/1-3-claude-md-templates.md","module-1/1-4-self-improving-claude-md.md",
-  "module-1/1-5-team-claude-md.md","module-2/2-1-read-write-reference-files.md",
-  "module-2/2-2-learning-companion.md","module-2/2-3-sub-agents-parallel-tasks.md",
-  "module-2/2-4-project-memory.md","module-2/2-5-pm-vault-organization.md",
-  "module-3/3-1-prd-from-scratch.md","module-3/3-2-multi-perspective-review.md",
-  "module-3/3-3-prd-to-ticket-pipeline.md","module-3/3-4-lightweight-specs.md",
-  "module-3/3-5-prd-versioning.md","module-4/4-1-connecting-to-data.md",
-  "module-4/4-2-narrative-analytics.md","module-4/4-3-retention-churn-analysis.md",
-  "module-4/4-4-ab-test-design.md","module-4/4-5-automated-weekly-digest.md",
-  "module-5/5-1-interview-synthesis.md","module-5/5-2-support-ticket-mining.md",
-  "module-5/5-3-competitive-intelligence.md","module-5/5-4-jtbd-mapping.md",
-  "module-5/5-5-discovery-memo.md","module-6/6-1-opportunity-sizing.md",
-  "module-6/6-2-roadmap-reasoning.md","module-6/6-3-executive-narrative.md",
-  "module-6/6-4-objection-simulation.md","module-6/6-5-qbr-and-strategy-docs.md",
-  "module-7/7-1-what-is-mcp.md","module-7/7-2-connecting-jira.md",
-  "module-7/7-3-connecting-slack.md","module-7/7-4-connecting-amplitude.md",
-  "module-7/7-5-connecting-notion.md","module-7/7-6-connecting-google-workspace.md",
-  "module-7/7-7-custom-mcp-servers.md","module-8/8-1-shared-team-claude-md.md",
-  "module-8/8-2-decision-log.md","module-8/8-3-shared-context-design.md",
-  "module-8/8-4-knowledge-map.md","module-8/8-5-vault-audit.md",
-  "module-9/9-1-build-loop.md","module-9/9-2-metrics-dashboard.md",
-  "module-9/9-3-research-portal.md","module-9/9-4-interactive-prototypes.md",
-  "module-9/9-5-deploy-on-vercel.md","module-10/10-1-choose-capstone.md",
-  "module-10/10-2a-capstone-zero-to-one.md","module-10/10-2b-capstone-scale.md",
-  "module-10/10-2c-capstone-platform.md","module-10/10-3-four-mental-models.md",
-  "module-10/10-4-peer-review.md","module-10/10-5-pm-ai-principles.md",
-]
-data = {"started": None, "current_lesson": None, "lessons": {l: False for l in lessons}}
-pathlib.Path("progress.json").write_text(json.dumps(data, indent=2))
-print("  progress.json created")
-PYEOF
+  cat > progress.json << 'JSON'
+{
+  "started": null,
+  "current_lesson": null,
+  "lessons": {
+    "module-0/0-1-install-and-setup.md": false,
+    "module-0/0-2-claude-modes.md": false,
+    "module-0/0-3-build-four-folders.md": false,
+    "module-0/0-4-two-core-files.md": false,
+    "module-0/0-5-slash-commands-and-skills.md": false,
+    "module-0/0-6-connect-first-tool.md": false,
+    "module-0/0-7-pm-ai-mental-model.md": false,
+    "module-0/0-8-token-economics.md": false,
+    "module-1/1-1-claude-md-hierarchy.md": false,
+    "module-1/1-2-what-goes-in-each-layer.md": false,
+    "module-1/1-3-claude-md-templates.md": false,
+    "module-1/1-4-self-improving-claude-md.md": false,
+    "module-1/1-5-team-claude-md.md": false,
+    "module-2/2-1-read-write-reference-files.md": false,
+    "module-2/2-2-learning-companion.md": false,
+    "module-2/2-3-sub-agents-parallel-tasks.md": false,
+    "module-2/2-4-project-memory.md": false,
+    "module-2/2-5-pm-vault-organization.md": false,
+    "module-3/3-1-prd-from-scratch.md": false,
+    "module-3/3-2-multi-perspective-review.md": false,
+    "module-3/3-3-prd-to-ticket-pipeline.md": false,
+    "module-3/3-4-lightweight-specs.md": false,
+    "module-3/3-5-prd-versioning.md": false,
+    "module-4/4-1-connecting-to-data.md": false,
+    "module-4/4-2-narrative-analytics.md": false,
+    "module-4/4-3-retention-churn-analysis.md": false,
+    "module-4/4-4-ab-test-design.md": false,
+    "module-4/4-5-automated-weekly-digest.md": false,
+    "module-5/5-1-interview-synthesis.md": false,
+    "module-5/5-2-support-ticket-mining.md": false,
+    "module-5/5-3-competitive-intelligence.md": false,
+    "module-5/5-4-jtbd-mapping.md": false,
+    "module-5/5-5-discovery-memo.md": false,
+    "module-6/6-1-opportunity-sizing.md": false,
+    "module-6/6-2-roadmap-reasoning.md": false,
+    "module-6/6-3-executive-narrative.md": false,
+    "module-6/6-4-objection-simulation.md": false,
+    "module-6/6-5-qbr-and-strategy-docs.md": false,
+    "module-7/7-1-what-is-mcp.md": false,
+    "module-7/7-2-connecting-jira.md": false,
+    "module-7/7-3-connecting-slack.md": false,
+    "module-7/7-4-connecting-amplitude.md": false,
+    "module-7/7-5-connecting-notion.md": false,
+    "module-7/7-6-connecting-google-workspace.md": false,
+    "module-7/7-7-custom-mcp-servers.md": false,
+    "module-7/7-8-additional-connectors.md": false,
+    "module-8/8-1-shared-team-claude-md.md": false,
+    "module-8/8-2-decision-log.md": false,
+    "module-8/8-3-shared-context-design.md": false,
+    "module-8/8-4-knowledge-map.md": false,
+    "module-8/8-5-vault-audit.md": false,
+    "module-9/9-1-build-loop.md": false,
+    "module-9/9-2-metrics-dashboard.md": false,
+    "module-9/9-3-research-portal.md": false,
+    "module-9/9-4-interactive-prototypes.md": false,
+    "module-9/9-5-deploy-on-vercel.md": false,
+    "module-10/10-1-choose-capstone.md": false,
+    "module-10/10-2a-capstone-zero-to-one.md": false,
+    "module-10/10-2b-capstone-scale.md": false,
+    "module-10/10-2c-capstone-platform.md": false,
+    "module-10/10-3-four-mental-models.md": false,
+    "module-10/10-4-peer-review.md": false,
+    "module-10/10-5-pm-ai-principles.md": false
+  }
+}
+JSON
+  echo -e "${GREEN}  ✓ progress.json created${NC}"
 else
   echo -e "${GREEN}  ✓ progress.json already exists${NC}"
 fi
 
-# ── 7. Start the course UI ────────────────────────────────
+# ── 7. Done ───────────────────────────────────────────────
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${GREEN}  Setup complete!${NC}"
 echo ""
 echo "  Next steps:"
 echo ""
-echo -e "  ${YELLOW}1.${NC} Open a new terminal window and run:"
+echo -e "  ${YELLOW}1.${NC} Run Claude Code in this directory:"
 echo "       claude"
-echo "     (in this directory)"
 echo ""
-echo -e "  ${YELLOW}2.${NC} The course UI is opening in your browser..."
-echo "     If it doesn't open: http://localhost:4242"
+echo -e "  ${YELLOW}2.${NC} In Claude Code, type:"
+echo "       /lesson 0-1"
 echo ""
-echo -e "  ${YELLOW}3.${NC} In Claude Code, type:  /lesson 0-1"
-echo "     to start your first lesson."
-echo ""
+if [ -n "$PYTHON" ]; then
+  echo "  Optional — open the progress dashboard (separate terminal):"
+  echo "       python3 course-server.py"
+  echo "     Then visit: http://localhost:4242"
+  echo ""
+fi
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-# Start server (stays running until Ctrl+C)
-if [ "$NO_SERVER" = false ]; then
+# Start server only if Python available and --no-server not passed
+if [ "$NO_SERVER" = false ] && [ -n "$PYTHON" ]; then
   $PYTHON course-server.py
 fi
