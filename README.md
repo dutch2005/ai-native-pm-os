@@ -66,43 +66,78 @@ Everything you build in this course will be grounded in Meridian's context. By M
 
 ---
 
-## How to Start
+## Prerequisites
 
-**Step 1:** Ensure Claude Code is installed
+| Tool | Required | Install |
+|------|----------|---------|
+| Claude Code | ✅ Yes | https://claude.ai/code |
+| Claude Pro or Team plan | ✅ Yes | https://claude.ai |
+| Python 3.8+ | ✅ Yes | https://python.org/downloads |
+| Git | ✅ Yes | https://git-scm.com |
+
+---
+
+## How to Install
+
+### Option A — One-liner (recommended)
+
+Paste this into your terminal:
+
 ```bash
-claude --version
+curl -fsSL https://raw.githubusercontent.com/vishalmdi/ai-native-pm-os/main/install.sh | bash
 ```
 
-**Step 2:** Navigate to this directory in Claude Code
+This checks prerequisites, clones the repo into `~/ai-native-pm-os`, and runs first-time setup automatically.
+
+---
+
+### Option B — Manual install
+
 ```bash
-claude
+git clone https://github.com/vishalmdi/ai-native-pm-os.git
+cd ai-native-pm-os
+bash setup.sh
 ```
 
-**Step 3:** Begin Module 0
+---
+
+### Start your first lesson
+
+```bash
+cd ~/ai-native-pm-os   # or wherever you installed it
+claude                  # opens Claude Code in the course directory
 ```
-/start-m0-1
+
+Then in Claude Code:
+
 ```
+/lesson 0-1
+```
+
+---
+
+### Optional: progress dashboard
+
+In a separate terminal window:
+
+```bash
+python3 course-server.py
+```
+
+Then open **http://localhost:4242** in your browser.
 
 ---
 
 ## Slash Command Reference
 
-| Command | Module |
-|---------|--------|
-| `/start-m0-1` | Setup: Install & subscriptions |
-| `/start-m1-1` | CLAUDE.md: Global vs. project layers |
-| `/start-m2-1` | Files: PM filing system |
-| `/start-m3-1` | PRDs: Prompt → outline → draft |
-| `/start-m4-1` | Data: Connect CSV/SQL |
-| `/start-m5-1` | Research: Interview synthesis |
-| `/start-m6-1` | Strategy: Opportunity sizing |
-| `/start-m7-1` | MCP: What it is and why it matters |
-| `/start-m8-1` | Teams: Shared CLAUDE.md |
-| `/start-m9-1` | Vibe Coding: The build loop |
-| `/start-m10-1` | Capstone: Choose your artifact |
-| `/progress` | View your progress tracker |
+| Command | What it does |
+|---------|-------------|
+| `/lesson 0-1` | Load a specific lesson (replace `0-1` with any lesson ID) |
+| `/next` | Continue from where you left off |
+| `/complete` | Mark the current lesson done and update your progress |
+| `/progress` | View a completion table across all 11 modules |
 | `/context-check` | Audit your CLAUDE.md health |
-| `/meridian` | Load Meridian company context |
+| `/meridian` | Load the Meridian company context |
 
 ---
 

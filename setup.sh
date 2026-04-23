@@ -1,8 +1,14 @@
 #!/bin/bash
 # AI-Native PM OS — New Student Setup
 # Run once: bash setup.sh
+# Flags: --no-server   skip launching the web UI (used by install.sh)
 
 set -e
+
+NO_SERVER=false
+for arg in "$@"; do
+  [ "$arg" = "--no-server" ] && NO_SERVER=true
+done
 
 COURSE_DIR="$(cd "$(dirname "$0")" && pwd)"
 GREEN='\033[0;32m'
@@ -42,7 +48,15 @@ else
 fi
 echo -e "${GREEN}  ✓ Python 3 found ($($PYTHON --version))${NC}"
 
-# ── 3. Create workspace folders ───────────────────────────
+# ── 3. Set course mode ───────────────────────────────────
+if [ ! -f .course-mode ]; then
+  echo "student" > .course-mode
+  echo -e "${GREEN}  ✓ Course mode set to: student${NC}"
+else
+  echo -e "${GREEN}  ✓ Course mode: $(cat .course-mode)${NC}"
+fi
+
+# ── 4. Create workspace folders ───────────────────────────
 echo "Creating workspace folders..."
 mkdir -p CLAUDE-OUTPUTS
 mkdir -p ABOUT-ME
@@ -51,7 +65,7 @@ mkdir -p PROJECTS/meridian-os/analytics
 mkdir -p TEMPLATES
 echo -e "${GREEN}  ✓ Folders created${NC}"
 
-# ── 4. Create ABOUT-ME/CLAUDE.md if not present ──────────
+# ── 5. Create ABOUT-ME/CLAUDE.md if not present ──────────
 if [ ! -f ABOUT-ME/CLAUDE.md ]; then
   cat > ABOUT-ME/CLAUDE.md << 'ABOUT'
 # About Me
@@ -76,7 +90,7 @@ else
   echo -e "${GREEN}  ✓ ABOUT-ME/CLAUDE.md already exists${NC}"
 fi
 
-# ── 5. Initialize progress.json ───────────────────────────
+# ── 6. Initialize progress.json ───────────────────────────
 if [ ! -f progress.json ]; then
   echo -e "${YELLOW}  ⚠ progress.json missing — regenerating...${NC}"
   $PYTHON - << 'PYEOF'
@@ -122,7 +136,7 @@ else
   echo -e "${GREEN}  ✓ progress.json already exists${NC}"
 fi
 
-# ── 6. Start the course UI ────────────────────────────────
+# ── 7. Start the course UI ────────────────────────────────
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${GREEN}  Setup complete!${NC}"
@@ -143,4 +157,6 @@ echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Start server (stays running until Ctrl+C)
-$PYTHON course-server.py
+if [ "$NO_SERVER" = false ]; then
+  $PYTHON course-server.py
+fi
