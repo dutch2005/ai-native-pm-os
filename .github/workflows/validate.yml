@@ -1,0 +1,74 @@
+name: validate
+
+# Run on every PR and on every push to main. Catches the regressions Gemini's
+# cross-AI review surfaced as the highest-value classes:
+#   - SpeQ contract drift (vocabulary, undeclared entities, BOUNDARY violations)
+#   - shell script syntax errors
+#   - lesson-ID parity (disk vs CLAUDE.md vs AGENTS.md vs setup.sh template)
+#   - broken cross-references in docs
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: spec + scripts + parity + links
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (for SpeQ CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python (for parity checks)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install SpeQ CLI
+        run: npm install -g @speq-ai/speq
+
+      - name: Validate ai-native-pm-os.speq
+        run: speq check ai-native-pm-os.speq
+
+      - name: Shell script syntax check
+        run: |
+          set -e
+          for f in install.sh setup.sh start-lesson.sh test-mode.sh scripts/*.sh; do
+            if [ -f "$f" ]; then
+              echo "Checking $f"
+              bash -n "$f"
+            fi
+          done
+
+      - name: Lesson parity check
+        run: bash scripts/check-lesson-parity.sh
+
+      - name: Markdown link check
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # Check internal links + the docs and wiki we ship.
+          # External links are not validated here (they'd flake on rate limits
+          # and external outages and aren't part of the merge contract).
+          args: >-
+            --offline
+            --no-progress
+            --include-fragments
+            'README.md'
+            'CLAUDE.md'
+            'AGENTS.md'
+            'GEMINI.md'
+            '.cursor/rules/*.mdc'
+            'docs/**/*.md'
+            'wiki/**/*.md'
+          fail: true
