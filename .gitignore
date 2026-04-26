@@ -2,11 +2,20 @@
 CLAUDE-OUTPUTS/
 ABOUT-ME/
 progress.json
+TEMPLATES/
+
+# Student artifacts inside PROJECTS/meridian-os/ — keep seed files committed,
+# ignore everything the student generates (research notes, analytics, etc.).
+PROJECTS/meridian-os/research/
+PROJECTS/meridian-os/analytics/
 
 # Test/creator data — never publish
 CLAUDE-OUTPUTS-*/
 progress.*.json
 .course-mode
+
+# SpeQ state — generated per-environment, never committed
+state_*.speq
 
 # System
 .DS_Store

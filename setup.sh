@@ -24,15 +24,31 @@ echo ""
 
 cd "$COURSE_DIR"
 
-# ── 1. Check Claude Code ──────────────────────────────────
-echo "Checking Claude Code..."
-if ! command -v claude &>/dev/null; then
-  echo -e "${YELLOW}  ⚠ Claude Code not found.${NC}"
-  echo "  Install it from: https://claude.ai/code"
+# ── 1. Check for a supported AI coding CLI ────────────────
+# Course is agent-neutral (see AGENTS.md). Any of these works.
+# install.sh passes the detected agent via $AGENT_CLI; we re-detect if missing.
+echo "Checking for an AI coding CLI..."
+if [ -z "$AGENT_CLI" ]; then
+  for cli in claude codex gemini aider cursor; do
+    if command -v "$cli" &>/dev/null; then
+      AGENT_CLI="$cli"
+      break
+    fi
+  done
+fi
+
+if [ -z "$AGENT_CLI" ]; then
+  echo -e "${YELLOW}  ⚠ No supported AI coding CLI found.${NC}"
+  echo "  Install one of:"
+  echo "    Claude Code   https://claude.ai/code               (recommended)"
+  echo "    Codex CLI     https://github.com/openai/codex"
+  echo "    Gemini CLI    https://github.com/google-gemini/gemini-cli"
+  echo "    Aider         https://aider.chat"
+  echo "    Cursor        https://cursor.com"
   echo "  Then re-run this script."
   exit 1
 fi
-echo -e "${GREEN}  ✓ Claude Code found${NC}"
+echo -e "${GREEN}  ✓ AI CLI found: ${AGENT_CLI}${NC}"
 
 # ── 2. Check Python 3 (optional — only needed for dashboard) ──
 PYTHON=""
@@ -170,17 +186,43 @@ else
 fi
 
 # ── 7. Done ───────────────────────────────────────────────
+case "$AGENT_CLI" in
+  claude)
+    LAUNCH_CMD="claude"
+    PRELOAD_NOTE=""
+    FIRST_PROMPT="/lesson 0-1"
+    ;;
+  aider)
+    LAUNCH_CMD="aider --read AGENTS.md --read ai-native-pm-os.speq"
+    PRELOAD_NOTE="(Aider does not auto-discover AGENTS.md, so the launch command above pre-loads it for you.)"
+    FIRST_PROMPT="load lesson 0-1"
+    ;;
+  *)
+    LAUNCH_CMD="$AGENT_CLI"
+    PRELOAD_NOTE=""
+    FIRST_PROMPT="load lesson 0-1"
+    ;;
+esac
+
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${GREEN}  Setup complete!${NC}"
 echo ""
 echo "  Next steps:"
 echo ""
-echo -e "  ${YELLOW}1.${NC} Run Claude Code in this directory:"
-echo "       claude"
+echo -e "  ${YELLOW}1.${NC} Run your AI CLI in this directory:"
+echo "       $LAUNCH_CMD"
+if [ -n "$PRELOAD_NOTE" ]; then
+  echo "     $PRELOAD_NOTE"
+fi
 echo ""
-echo -e "  ${YELLOW}2.${NC} In Claude Code, type:"
-echo "       /lesson 0-1"
+echo -e "  ${YELLOW}2.${NC} Start your first lesson:"
+echo "       $FIRST_PROMPT"
+if [ "$AGENT_CLI" != "claude" ]; then
+  echo ""
+  echo "     (Slash commands like /lesson are Claude Code-native. In other agents,"
+  echo "      use natural language — see AGENTS.md for recognized phrasings.)"
+fi
 echo ""
 if [ -n "$PYTHON" ]; then
   echo "  Optional — open the progress dashboard (separate terminal):"

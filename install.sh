@@ -20,18 +20,31 @@ echo -e "${BLUE}  AI-Native PM OS — Installer${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-# ── 1. Check Claude Code (required) ──────────────────────
-if ! command -v claude &>/dev/null; then
-  echo -e "${RED}  ✗ Claude Code not found.${NC}"
+# ── 1. Check for a supported AI coding CLI ───────────────
+# Course is agent-neutral (see AGENTS.md). Any of these works:
+DETECTED_AGENT=""
+for cli in claude codex gemini aider cursor; do
+  if command -v "$cli" &>/dev/null; then
+    DETECTED_AGENT="$cli"
+    break
+  fi
+done
+
+if [ -z "$DETECTED_AGENT" ]; then
+  echo -e "${RED}  ✗ No supported AI coding CLI found.${NC}"
   echo ""
-  echo "  Claude Code is required. Install it first:"
-  echo "    https://claude.ai/code"
+  echo "  Install one of:"
+  echo "    Claude Code   https://claude.ai/code               (recommended — slash commands work natively)"
+  echo "    Codex CLI     https://github.com/openai/codex"
+  echo "    Gemini CLI    https://github.com/google-gemini/gemini-cli"
+  echo "    Aider         https://aider.chat"
+  echo "    Cursor        https://cursor.com"
   echo ""
   echo "  Then re-run this installer:"
   echo "    curl -fsSL https://raw.githubusercontent.com/vishalmdi/ai-native-pm-os/main/install.sh | bash"
   exit 1
 fi
-echo -e "${GREEN}  ✓ Claude Code found${NC}"
+echo -e "${GREEN}  ✓ AI CLI found: ${DETECTED_AGENT}${NC}"
 
 # ── 2. Determine install directory ───────────────────────
 INSTALL_DIR="$DEFAULT_DIR"
@@ -73,9 +86,27 @@ fi
 # ── 4. Run setup ──────────────────────────────────────────
 echo ""
 cd "$INSTALL_DIR"
-bash setup.sh --no-server
+AGENT_CLI="$DETECTED_AGENT" bash setup.sh --no-server
 
 # ── 5. Final instructions ─────────────────────────────────
+case "$DETECTED_AGENT" in
+  claude)
+    LAUNCH_CMD="claude"
+    PRELOAD_NOTE=""
+    FIRST_PROMPT="/lesson 0-1"
+    ;;
+  aider)
+    LAUNCH_CMD="aider --read AGENTS.md --read ai-native-pm-os.speq"
+    PRELOAD_NOTE="(Aider does not auto-discover AGENTS.md, so the launch command above pre-loads it for you.)"
+    FIRST_PROMPT="load lesson 0-1"
+    ;;
+  *)
+    LAUNCH_CMD="$DETECTED_AGENT"
+    PRELOAD_NOTE=""
+    FIRST_PROMPT="load lesson 0-1"
+    ;;
+esac
+
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${GREEN}  Installation complete!${NC}"
@@ -85,11 +116,19 @@ echo ""
 echo -e "  ${YELLOW}1.${NC} Open the course directory:"
 echo "       cd $INSTALL_DIR"
 echo ""
-echo -e "  ${YELLOW}2.${NC} Launch Claude Code:"
-echo "       claude"
+echo -e "  ${YELLOW}2.${NC} Launch your AI CLI:"
+echo "       $LAUNCH_CMD"
+if [ -n "$PRELOAD_NOTE" ]; then
+  echo "     $PRELOAD_NOTE"
+fi
 echo ""
-echo -e "  ${YELLOW}3.${NC} In Claude Code, type your first lesson:"
-echo "       /lesson 0-1"
+echo -e "  ${YELLOW}3.${NC} Start your first lesson:"
+echo "       $FIRST_PROMPT"
+if [ "$DETECTED_AGENT" != "claude" ]; then
+  echo ""
+  echo "     (Slash commands like /lesson are Claude Code-native. In other agents,"
+  echo "      use natural language — see AGENTS.md for recognized phrasings.)"
+fi
 echo ""
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""

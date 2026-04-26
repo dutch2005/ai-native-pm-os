@@ -1,0 +1,135 @@
+# ai-native-pm-os.speq
+# Architectural contract for the AI-Native PM OS course.
+# Closed-world: anything not declared here does not exist in this project.
+# Read by every AI agent (Claude Code, Codex, Gemini CLI, Aider, generic) before acting.
+# Spec format: SpeQ v0.2 — see https://github.com/speq-ai for the grammar.
+
+VERSION 0.2.0
+
+PROJECT
+  NAME   "ai-native-pm-os"
+  LANG   python
+  STACK  python, bash, markdown, html, claude-code, mcp
+  ARCH   layered
+  DEPS
+    SYSTEM   bash
+    RUNTIME  python3
+    DEV      pytest
+
+VOCABULARY
+  Lesson            # never: chapter, tutorial, unit, exercise
+  Module            # never: section, chapter, week, level
+  CourseGuide       # never: tutor, instructor, teacher (this is the agent role)
+  ProgressLedger    # never: tracker, log, state-file (this is progress.json)
+  Meridian          # never: company, demo-company, sample-company (the practice company)
+  ClaudeOutputs     # never: outputs, results, deliverables (the CLAUDE-OUTPUTS folder)
+  PmVault           # never: workspace, project-folder, repo-root
+  AgentContextFile  # never: rules-file, briefing, prompt-file (CLAUDE.md, AGENTS.md, GEMINI.md)
+  CourseMode        # never: profile, env, environment (student vs test)
+  Capstone          # never: final-project, graduation, capstone-project
+  McpConnector      # never: integration, plugin, addon, extension
+
+ENTITY lesson, module, progress_ledger, agent_context_file, course_mode, project_artifact, mcp_connector, capstone, course_guide
+
+TRANSFORM
+  course_guide       -> lesson           : load, complete, advance
+  lesson             -> progress_ledger  : mark_complete
+  agent_context_file -> course_guide     : configure
+  project_artifact   -> module           : produce
+  mcp_connector      -> project_artifact : enrich
+  module             -> capstone         : graduate
+
+SECRETS
+  ANTHROPIC_API_KEY    -> AGENT_RUNTIME
+  OPENAI_API_KEY       -> AGENT_RUNTIME
+  GEMINI_API_KEY       -> AGENT_RUNTIME
+  MCP_SLACK_TOKEN      -> AGENT_RUNTIME
+  MCP_JIRA_TOKEN       -> AGENT_RUNTIME
+  MCP_AMPLITUDE_TOKEN  -> AGENT_RUNTIME
+  MCP_NOTION_TOKEN     -> AGENT_RUNTIME
+
+CLASSIFY
+  agent_context_file.identity  pii
+
+LAYERS
+  COURSE_CONTENT
+    OWNS    lesson_definitions, module_organization, meridian_context
+    NEVER   mutate_progress_state_directly
+    NEVER   reference_undeclared_lesson_id
+
+  AGENT_RUNTIME
+    BOUNDARY  external
+    OWNS      lesson_guidance, slash_command_handling, model_routing, tone
+    CALLS     COURSE_CONTENT, PROGRESS_LEDGER, CLAUDE_OUTPUTS
+    NEVER     hardcode_secret_value
+    NEVER     write_outside_outputs_folder
+    NEVER     modify_lesson_files_silently
+    NEVER     skip_user_confirmation_on_destructive_action
+
+  PROGRESS_LEDGER
+    OWNS    progress_json_state
+    NEVER   advance_without_user_consent
+    NEVER   write_partial_state
+
+  CLAUDE_OUTPUTS
+    OWNS    student_artifacts
+    NEVER   write_to_student_folder_in_test_mode
+    NEVER   write_to_test_folder_in_student_mode
+    NEVER   overwrite_lesson_files
+
+  PROGRESS_DASHBOARD
+    OWNS    read_only_progress_visualization
+    CALLS   PROGRESS_LEDGER
+    NEVER   write_to_progress_ledger
+    NEVER   expose_secrets_to_browser
+
+CONTRACTS
+  lesson.completion        REQUIRES user-confirmation
+  progress_ledger.write    ALWAYS   atomic
+  agent_context_file.*     NEVER    inject_unscoped_secret
+  module.lessons           ALWAYS   sequential
+  course_mode.outputs      ALWAYS   matches-active-mode
+  capstone.deliverable     REQUIRES module-10-prereqs-complete
+
+  FLOW lesson_completion
+    1. [AGENT_RUNTIME]   lesson.deliver
+    2. [AGENT_RUNTIME]   lesson.verify_understanding
+    3. [PROGRESS_LEDGER] progress_ledger.mark_complete
+    4. [AGENT_RUNTIME]   lesson.advance
+    ROLLBACK  progress_ledger.unmark
+    ATOMIC    true
+    TIMEOUT   3600s
+
+  FLOW course_setup
+    1. [AGENT_RUNTIME]      course_guide.verify_prerequisites
+    2. [AGENT_RUNTIME]      course_mode.initialize
+    3. [PROGRESS_LEDGER]    progress_ledger.create
+    4. [CLAUDE_OUTPUTS]     project_artifact.bootstrap_folders
+    ATOMIC    false
+    TIMEOUT   60s
+
+  FLOW capstone_graduation
+    1. [PROGRESS_LEDGER] module.verify_prereqs
+    2. [AGENT_RUNTIME]   capstone.deliver
+    3. [CLAUDE_OUTPUTS]         capstone.persist
+    4. [PROGRESS_LEDGER] progress_ledger.mark_complete
+    ATOMIC  false
+    TIMEOUT 28800s
+
+OBSERVABILITY
+  flow lesson_completion
+    level:     standard
+    must-log:  lesson_id, completion_timestamp
+    metrics:   lessons_completed, time_per_lesson
+
+  flow course_setup
+    level:     standard
+    must-log:  course_mode, setup_timestamp
+    metrics:   setup_duration
+
+CHANGELOG
+  0.2.0
+    ADDED initial spec for AI-Native PM OS course
+    ADDED VOCABULARY entries for Lesson, Module, Meridian, ProgressLedger, ClaudeOutputs, AgentContextFile, CourseMode, Capstone, McpConnector, CourseGuide, PmVault
+    ADDED LAYERS: COURSE_CONTENT, AGENT_RUNTIME (boundary), PROGRESS_LEDGER, CLAUDE_OUTPUTS, PROGRESS_DASHBOARD
+    ADDED FLOWS: lesson_completion, course_setup, capstone_graduation
