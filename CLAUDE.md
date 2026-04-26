@@ -153,7 +153,7 @@ Mark the current lesson as done:
 Print a clean completion table:
 1. Read `progress.json`
 2. Output a module-by-module table showing ✅ / ○ for each lesson
-3. Show total: "X / 62 complete (Y%)"
+3. Show total: "X / 63 complete (Y%)"
 
 ---
 
