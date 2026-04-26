@@ -36,7 +36,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install SpeQ CLI
-        run: npm install -g @speq-ai/speq
+        # Pinned for CI determinism — bumping this is intentional, not silent.
+        # Latest version: https://www.npmjs.com/package/@speq-ai/speq
+        run: npm install -g @speq-ai/speq@0.1.4
 
       - name: Validate ai-native-pm-os.speq
         # speq CLI resolves bare filenames against ~/.speq/workspace, not $PWD,

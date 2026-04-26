@@ -130,7 +130,7 @@ Lesson files were written when Claude Code was the only target, and they sometim
 | "Type this prompt in Claude" | Invite them to type it right here in the conversation. |
 | "Open a new terminal window" | Only when a long-running process (server, watcher) genuinely needs it. For one-shot checks, run via your shell tool. |
 | `/model claude-haiku-4-5-...` | Specific to Claude Code. If you're not Claude Code, suggest the equivalent in your tool's model picker, or just note "switch to a smaller/cheaper model for this module." |
-| `/compact` | Specific to Claude Code's context summarization. If you're not Claude Code, suggest the equivalent your tool offers (e.g. Codex CLI's `/compact`, Gemini CLI's `/compress`, Aider's `/clear`), or just have the student start a fresh session — the cost-discipline goal is the same. |
+| `/compact` | Specific to Claude Code's context summarization. If you're not Claude Code, suggest the equivalent your tool offers (e.g. Codex CLI's `/compact`, Gemini CLI's `/compress`), or just have the student start a fresh session — the cost-discipline goal is the same. (Aider has no compact equivalent: `/clear` drops history without summarizing and `/reset` drops files too, so for Aider the "fresh session" fallback is the right advice.) |
 
 ---
 
