@@ -39,7 +39,9 @@ jobs:
         run: npm install -g @speq-ai/speq
 
       - name: Validate ai-native-pm-os.speq
-        run: speq check ai-native-pm-os.speq
+        # speq CLI resolves bare filenames against ~/.speq/workspace, not $PWD,
+        # so we have to pass an absolute path.
+        run: speq check "$GITHUB_WORKSPACE/ai-native-pm-os.speq"
 
       - name: Shell script syntax check
         run: |
