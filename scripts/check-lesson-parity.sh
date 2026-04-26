@@ -20,6 +20,19 @@ export LC_ALL=C
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
+# Detect Python 3 — same logic as setup.sh. Some environments (Windows,
+# Conda) ship Python 3 as `python` rather than `python3`.
+PYTHON=""
+if command -v python3 &>/dev/null; then
+  PYTHON=python3
+elif command -v python &>/dev/null && python --version 2>&1 | grep -q "Python 3"; then
+  PYTHON=python
+else
+  echo "✗ No Python 3 found on PATH (tried `python3` and `python`)" >&2
+  echo "  Install Python 3 from https://python.org/downloads and re-run." >&2
+  exit 1
+fi
+
 FAIL=0
 fail() { echo "  ✗ $1" >&2; FAIL=1; }
 pass() { echo "  ✓ $1"; }
@@ -47,7 +60,7 @@ extract_ids() {
   local file="$1"
   # `sys.stdout.reconfigure(newline='')` prevents Python on Windows from
   # translating \n to \r\n, which would break `comm` against bash-tool output.
-  python3 -c "
+  "$PYTHON" -c "
 import re, sys
 sys.stdout.reconfigure(newline='')
 text = open(sys.argv[1], encoding='utf-8').read()
@@ -57,8 +70,8 @@ sys.stdout.write('\n'.join(ids) + '\n')
 }
 
 # ── 2. Build the set of lesson IDs from progress.json (optional — gitignored, only present after setup.sh) ──
-if [ -f progress.json ] && command -v python3 &>/dev/null; then
-  PROGRESS_IDS=$(python3 -c "
+if [ -f progress.json ]; then
+  PROGRESS_IDS=$("$PYTHON" -c "
 import json, re, sys
 sys.stdout.reconfigure(newline='')
 with open('progress.json') as f:

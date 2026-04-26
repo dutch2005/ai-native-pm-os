@@ -33,6 +33,10 @@ declare -a CHECKS=(
   "Module=chapter"
   "ProgressLedger=state-file"
   "Capstone=final-project"
+  # Regression check: `tutor` was a real bug caught in the local Round-1
+  # Gemini review (5 files violated their own VOCABULARY). Adding it here
+  # prevents the same bug from re-entering through new lesson content.
+  "CourseGuide=tutor,instructor,teacher"
 )
 
 # Scan lesson markdown only — TARGET_GLOBS is restricted to module-*/, so
