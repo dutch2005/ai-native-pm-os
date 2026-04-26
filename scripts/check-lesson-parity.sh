@@ -32,7 +32,7 @@ echo "==================="
 DISK_IDS=$(find module-* -name '[0-9]*.md' \
   | sed -E 's|module-[0-9]+/([0-9]+-[0-9]+[a-z]?)-.*\.md|\1|' \
   | sort -u)
-DISK_COUNT=$(echo "$DISK_IDS" | wc -l)
+DISK_COUNT=$(echo "$DISK_IDS" | grep -c .)
 echo ""
 echo "Found $DISK_COUNT lesson files on disk"
 
@@ -68,7 +68,7 @@ for path in data.get('lessons', {}):
     if m:
         sys.stdout.write(m.group(1) + '\n')
 " | sort -u)
-  PROGRESS_COUNT=$(echo "$PROGRESS_IDS" | wc -l)
+  PROGRESS_COUNT=$(echo "$PROGRESS_IDS" | grep -c .)
   echo "Found $PROGRESS_COUNT lesson IDs in progress.json"
 
   ON_DISK_NOT_IN_PROGRESS=$(comm -23 <(echo "$DISK_IDS") <(echo "$PROGRESS_IDS"))
@@ -94,7 +94,7 @@ SETUP_IDS=$(awk '/cat > progress.json << .JSON/,/^JSON$/' setup.sh \
   | sed -E 's|"module-[0-9]+/([0-9]+-[0-9]+[a-z]?)-.*|\1|' \
   | sort -u)
 if [ -n "$SETUP_IDS" ]; then
-  SETUP_COUNT=$(echo "$SETUP_IDS" | wc -l)
+  SETUP_COUNT=$(echo "$SETUP_IDS" | grep -c .)
   echo "Found $SETUP_COUNT lesson IDs in setup.sh progress.json template"
   ON_DISK_NOT_IN_SETUP=$(comm -23 <(echo "$DISK_IDS") <(echo "$SETUP_IDS"))
   IN_SETUP_NOT_ON_DISK=$(comm -13 <(echo "$DISK_IDS") <(echo "$SETUP_IDS"))
@@ -112,7 +112,7 @@ fi
 #   `0-1, 0-2, ..., 10-5`
 # extract_ids() strips brace-expansion shorthand like `10-2{a,b,c}` first.
 AGENTS_IDS=$(extract_ids AGENTS.md)
-AGENTS_COUNT=$(echo "$AGENTS_IDS" | wc -l)
+AGENTS_COUNT=$(echo "$AGENTS_IDS" | grep -c .)
 echo "Found $AGENTS_COUNT lesson IDs in AGENTS.md"
 
 ON_DISK_NOT_IN_AGENTS=$(comm -23 <(echo "$DISK_IDS") <(echo "$AGENTS_IDS"))
@@ -130,7 +130,7 @@ fi
 # The CLAUDE.md map has lines like:
 #   - `0-1` → `module-0/0-1-install-and-setup.md`
 CLAUDE_IDS=$(extract_ids CLAUDE.md)
-CLAUDE_COUNT=$(echo "$CLAUDE_IDS" | wc -l)
+CLAUDE_COUNT=$(echo "$CLAUDE_IDS" | grep -c .)
 echo "Found $CLAUDE_COUNT lesson IDs in CLAUDE.md"
 
 ON_DISK_NOT_IN_CLAUDE=$(comm -23 <(echo "$DISK_IDS") <(echo "$CLAUDE_IDS"))

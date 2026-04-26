@@ -35,34 +35,10 @@ declare -a CHECKS=(
   "Capstone=final-project"
 )
 
-# Files to skip — they are allowed to mention forbidden synonyms because
-# they are the VOCABULARY definitions themselves, or human-prose docs where
-# generic English use is unavoidable.
-SKIP_FILES=(
-  "ai-native-pm-os.speq"
-  "AGENTS.md"
-  "GEMINI.md"
-  "CLAUDE.md"
-  "README.md"
-  "docs/SPEQ-RATIONALE.md"
-  "wiki/Glossary.md"
-  "wiki/Why-Speq.md"
-  "wiki/How-To-Update-Spec.md"
-  "wiki/Multi-Agent-Support.md"
-  "wiki/Architecture-Overview.md"
-  "wiki/How-To-Use-Different-Agent.md"
-  "wiki/Troubleshooting.md"
-  "wiki/Home.md"
-  ".cursor/rules/ai-native-pm-os.mdc"
-)
-
-# Build a single grep --exclude pattern.
-EXCLUDE_ARGS=()
-for f in "${SKIP_FILES[@]}"; do
-  EXCLUDE_ARGS+=( --exclude "$(basename "$f")" )
-done
-
-# Scan lesson markdown only.
+# Scan lesson markdown only — TARGET_GLOBS is restricted to module-*/, so
+# the VOCABULARY tables in AGENTS.md, CLAUDE.md, wiki/Glossary.md, etc.
+# (which legitimately list forbidden synonyms by design) are naturally
+# out of scope. No explicit skip list needed.
 TARGET_GLOBS=(module-*/[0-9]*.md)
 
 echo "Vocabulary drift scan"
@@ -75,12 +51,14 @@ for entry in "${CHECKS[@]}"; do
 
   for syn in "${synonyms[@]}"; do
     # Whole-word, case-insensitive grep across lesson files.
-    matches=$(grep -inwE -- "\\b${syn}\\b" "${TARGET_GLOBS[@]}" 2>/dev/null || true)
+    # `-w` (word-regexp) handles boundary matching portably; explicit \b
+    # would be redundant and is unsupported by BSD grep on macOS.
+    matches=$(grep -inwE -- "${syn}" "${TARGET_GLOBS[@]}" 2>/dev/null || true)
     if [ -n "$matches" ]; then
       echo ""
       echo "  ✗ Forbidden synonym '${syn}' (canonical: ${canonical}) found:"
       echo "$matches" | sed 's/^/      /' | head -10
-      count=$(echo "$matches" | wc -l)
+      count=$(echo "$matches" | grep -c .)
       if [ "$count" -gt 10 ]; then
         echo "      ... and $((count - 10)) more"
       fi
