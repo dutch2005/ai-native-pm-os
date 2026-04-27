@@ -1,0 +1,39 @@
+name: vocabulary-drift
+
+# Scans lesson markdown for forbidden synonyms of canonical terms in
+# ai-native-pm-os.speq's VOCABULARY block. This catches drift from contributors
+# who weren't aware of the binding vocabulary.
+#
+# Manually triggered (workflow_dispatch) and weekly cron — too noisy for every
+# PR because legitimate uses of forbidden words inside VOCABULARY tables and
+# certain prose contexts are unavoidable.
+#
+# When this fails, the fix is usually:
+#   - replace the synonym with the canonical term, OR
+#   - add an exception in scripts/check-vocabulary-drift.sh for the legitimate use
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly on Mondays at 09:00 UTC
+    - cron: '0 9 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  vocabulary-drift:
+    name: scan lesson markdown for forbidden synonyms
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run vocabulary drift scan
+        run: bash scripts/check-vocabulary-drift.sh

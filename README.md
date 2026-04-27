@@ -70,10 +70,98 @@ Everything you build in this course will be grounded in Meridian's context. By M
 
 | Tool | Required | Install |
 |------|----------|---------|
-| Claude Code | ✅ Yes | https://claude.ai/code |
-| Claude Pro or Team plan | ✅ Yes | https://claude.ai |
+| An AI coding CLI | ✅ Yes | Claude Code, Codex CLI, Gemini CLI, Aider, or Cursor — see [agent compatibility](#agent-compatibility) below |
+| Active LLM subscription/API key | ✅ Yes | Anthropic / OpenAI / Google / your provider |
 | Python 3.8+ | Optional | https://python.org/downloads — only needed for the progress dashboard |
 | Git | Optional | https://git-scm.com — installer falls back to ZIP download if absent |
+
+## Agent compatibility
+
+The course was originally written for **Claude Code** and that is still the most polished experience (slash commands work natively). It now also runs in any agent that respects the `AGENTS.md` convention or can be pointed at the project's architectural contract.
+
+| Agent | Reads first | Slash commands | Notes |
+|---|---|---|---|
+| Claude Code | `CLAUDE.md` | Native | Recommended — full lesson map + model recommendations |
+| Codex CLI | `AGENTS.md` | As natural language | Use phrasings like "load lesson 0-1" or "I'm done" |
+| Gemini CLI | `GEMINI.md` → `AGENTS.md` | As natural language | Same as Codex |
+| Aider | `AGENTS.md` (must `/read` it explicitly at session start — Aider does not auto-discover) | As natural language | Same as Codex once loaded |
+| Cursor | `.cursor/rules/ai-native-pm-os.mdc` | As natural language | Auto-loads on project open |
+| Continue / Cline / generic LLM agent | `AGENTS.md` | As natural language | Same as Codex |
+| Custom agent (Anthropic SDK, OpenAI Agents SDK, LangChain) | Pass `AGENTS.md` + `ai-native-pm-os.speq` into the system prompt | n/a | Full example in the [wiki](./wiki/How-To-Use-Different-Agent.md) |
+
+The architectural source of truth for **all** agents is [`ai-native-pm-os.speq`](./ai-native-pm-os.speq) — a closed-world, machine-readable contract that pins down the course's vocabulary, layers, contracts, and flows so every agent produces identical behavior.
+
+---
+
+## Why this matters (and how it works)
+
+The course's whole premise is **context engineering** — that one great `CLAUDE.md` is worth more than 50 prompts. Modules 0–2 teach this directly: a well-written briefing file is the most leveraged thing a PM can build.
+
+That premise has a hidden assumption: the briefing file is in **natural language**. Natural-language briefings work because LLMs are fluent, but they have a known failure mode — **drift**. The same paragraph means slightly different things to Claude Sonnet 4.6, GPT-5, and Gemini 2.5 Pro. They infer different defaults from the same words. On a small project that's tolerable. On a 63-lesson course with a fixed practice company (Meridian), strict folder layout, and progress state, drift compounds fast.
+
+This course closes the gap with two complementary additions:
+
+### 1. A `.speq` file as the architectural source of truth
+
+[`ai-native-pm-os.speq`](./ai-native-pm-os.speq) is a machine-readable, **closed-world** contract for the course's architecture. It uses [SpeQ](https://github.com/speq-ai), a small DSL whose entire premise is "anything not declared does not exist." It pins down:
+
+- **Vocabulary** — the canonical name for every concept (`Lesson`, `Module`, `Meridian`, `ProgressLedger`, `ClaudeOutputs`, `Capstone`, `McpConnector`, `CourseGuide`, `PmVault`, `AgentContextFile`, `CourseMode`). Synonyms become contract violations.
+- **Layers** — `COURSE_CONTENT`, `AGENT_RUNTIME` (the only `BOUNDARY external`), `PROGRESS_LEDGER`, `CLAUDE_OUTPUTS`, `PROGRESS_DASHBOARD`. Each layer has explicit `OWNS`, `CALLS`, and `NEVER` rules.
+- **Contracts** — `lesson.completion REQUIRES user-confirmation`, `progress_ledger.write ALWAYS atomic`, `course_mode.outputs ALWAYS matches-active-mode`, etc. These are invariants every agent must honor.
+- **Flows** — `lesson_completion`, `course_setup`, `capstone_graduation` with explicit step ordering, rollback, and timeouts.
+- **Secrets** — env-var names scoped to `AGENT_RUNTIME`, never committed, never logged.
+
+The result: two agents reading the same spec produce architecturally equivalent output. Concrete bugs the spec prevents:
+
+| Without the spec | With the spec |
+|---|---|
+| Agent invents new entities ("let me create a `study_plan` for you") | `ENTITY` is closed-world; non-listed entities don't exist |
+| Module 1 says "node", Module 5 says "step" — for the same concept | `VOCABULARY` makes synonym use a contract violation |
+| Agent auto-marks a lesson complete after a checklist passes | `lesson.completion REQUIRES user-confirmation` blocks it |
+| Agent edits a lesson file to "fix" student misunderstanding | `AGENT_RUNTIME NEVER modify_lesson_files_silently` blocks it |
+| Test-mode artifacts pollute student outputs folder | `course_mode.outputs ALWAYS matches-active-mode` blocks it |
+| Dashboard accidentally writes to `progress.json` | `PROGRESS_DASHBOARD NEVER write_to_progress_ledger` blocks it |
+
+Crucially, **the course is about context engineering** — adding a `.speq` is the course walking the talk. Students learning about CLAUDE.md hierarchy in Module 1 can read the repo's own spec to see the next level of rigor.
+
+### 2. Five entry-point files so any agent works
+
+Different agents look for different files. The course ships one file per convention, all of which delegate to the spec and to `AGENTS.md`:
+
+| File | Read by | Purpose |
+|---|---|---|
+| [`CLAUDE.md`](./CLAUDE.md) | Claude Code | Canonical for Claude Code; full lesson-ID map, slash commands, model recommendations |
+| [`AGENTS.md`](./AGENTS.md) | Codex, Aider, Cursor, OpenAI Agents SDK, Continue, Cline, generic | Universal agent-neutral guide; slash commands ↔ natural language |
+| [`GEMINI.md`](./GEMINI.md) | Gemini CLI | Thin pointer to `AGENTS.md` plus Gemini model picker notes |
+| [`.cursor/rules/ai-native-pm-os.mdc`](./.cursor/rules/ai-native-pm-os.mdc) | Cursor | Auto-loads on project open; points at `AGENTS.md` |
+| `AIDER.md` (not present) | Aider | Aider falls back to `AGENTS.md` automatically |
+
+The behavior is **identical** across all agents. Only the entry point differs. `install.sh` and `setup.sh` auto-detect which CLI the student has installed (Claude Code, Codex, Gemini, Aider, or Cursor) and tailor the final-step instructions accordingly.
+
+### How to dig deeper
+
+The full system is documented in the **[wiki](./wiki/Home.md)**:
+
+- [Why a `.speq` file](./wiki/Why-Speq.md) — extended rationale, drift modes, course-specific fit
+- [Multi-agent support](./wiki/Multi-Agent-Support.md) — routing diagram, what differs per agent, onboarding new agents
+- [Architecture overview](./wiki/Architecture-Overview.md) — layer diagram, flows, file system layout, secrets handling
+- [How to update the spec](./wiki/How-To-Update-Spec.md) — when to bump the spec vs. just edit content; common validation errors
+- [How to use a different agent](./wiki/How-To-Use-Different-Agent.md) — step-by-step setup for Claude Code, Codex, Gemini, Aider, Cursor, custom SDK
+- [Troubleshooting](./wiki/Troubleshooting.md) — symptoms → causes → fixes
+- [Glossary](./wiki/Glossary.md) — every binding term, with the synonyms each replaces
+
+The shorter rationale lives at [`docs/SPEQ-RATIONALE.md`](./docs/SPEQ-RATIONALE.md).
+
+### Continuous integration
+
+Every PR runs [`.github/workflows/validate.yml`](./.github/workflows/validate.yml) which checks:
+
+- **Spec validity** — `speq check ai-native-pm-os.speq` must pass
+- **Shell script syntax** — `bash -n` on `install.sh`, `setup.sh`, `start-lesson.sh`, `test-mode.sh`, `scripts/*.sh`
+- **Lesson parity** — every lesson ID in `progress.json` (when present), `CLAUDE.md` map, `AGENTS.md` lesson order, and `setup.sh` JSON template must match the files actually on disk in `module-X/`
+- **Markdown links** — internal cross-references in `README.md`, `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `docs/`, and `wiki/` must resolve
+
+A weekly cron and manual-trigger workflow [`vocabulary-drift.yml`](./.github/workflows/vocabulary-drift.yml) audits lesson markdown for forbidden synonyms of the canonical vocabulary. Run it on demand with `gh workflow run vocabulary-drift.yml`.
 
 ---
 
@@ -105,14 +193,29 @@ bash setup.sh
 
 ```bash
 cd ~/ai-native-pm-os   # or wherever you installed it
-claude                  # opens Claude Code in the course directory
 ```
 
-Then in Claude Code:
+Then launch your AI CLI in this directory and trigger lesson 0-1.
 
+**Claude Code** (recommended):
+```bash
+claude
+```
+Then type:
 ```
 /lesson 0-1
 ```
+
+**Codex CLI / Gemini CLI / Aider / Cursor / other**:
+```bash
+codex   # or: gemini, aider, cursor .
+```
+Then ask in natural language:
+```
+load lesson 0-1
+```
+
+The `install.sh` and `setup.sh` scripts auto-detect which CLI is on your `PATH` and tell you the exact command to use. See the [wiki page on switching agents](./wiki/How-To-Use-Different-Agent.md) for per-tool details.
 
 ---
 
